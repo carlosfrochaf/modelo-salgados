@@ -13,7 +13,7 @@ import {
   Utensils,
   MessageCircle
 } from 'lucide-react';
-import { Category, Product } from '@/generated/prisma/client';
+import { Category, Product } from '@prisma/client';
 import styles from './MenuCardapio.module.css';
 import { 
   DELIVERY_TIERS, 
