@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { 
   Search, 
@@ -783,14 +784,14 @@ ${finalObservations ? `\n📝 *Observações:* ${finalObservations}\n` : ''}
               <div key={product.id} className={styles.card}>
                 <div className={styles.cardImageContainer}>
                   {product.imageUrl ? (
-                    <img 
+                    <Image 
                       src={product.imageUrl} 
                       alt={product.name} 
                       className={styles.cardImage}
-                      onError={(e) => {
-                        // fallback image in case unsplash fails
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
-                      }}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      style={{ objectFit: 'cover' }}
+                      priority={selectedCategoryId !== 'all' && product.categoryId === selectedCategoryId}
                     />
                   ) : (
                     <div style={{ height: '100%', background: '#1f1f23', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -971,11 +972,16 @@ ${finalObservations ? `\n📝 *Observações:* ${finalObservations}\n` : ''}
                     {cart.map((item) => (
                       <div key={item.id} className={styles.cartItem}>
                         {item.product.imageUrl && (
-                          <img 
-                            src={item.product.imageUrl} 
-                            alt={item.product.name} 
-                            className={styles.cartItemImage} 
-                          />
+                          <div style={{ position: 'relative', width: '50px', height: '50px', flexShrink: 0 }}>
+                            <Image 
+                              src={item.product.imageUrl} 
+                              alt={item.product.name} 
+                              className={styles.cartItemImage} 
+                              fill
+                              sizes="50px"
+                              style={{ objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+                            />
+                          </div>
                         )}
                         <div className={styles.cartItemInfo}>
                           <span className={styles.cartItemName}>{item.product.name}</span>
