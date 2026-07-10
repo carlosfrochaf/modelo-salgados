@@ -1,0 +1,241 @@
+.container {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  animation: fadeIn var(--transition-slow);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 20px;
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--secondary);
+  font-weight: 600;
+  transition: var(--transition-fast);
+}
+
+.backBtn:hover {
+  color: var(--primary);
+}
+
+/* Stepper Layout */
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 30px 24px;
+  position: relative;
+  box-shadow: var(--shadow);
+}
+
+.stepRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+  z-index: 2;
+}
+
+.stepIconContainer {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--secondary-bg);
+  border: 2px solid var(--card-border);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition-normal);
+}
+
+.stepLine {
+  position: absolute;
+  left: 21px;
+  top: 44px;
+  bottom: -24px;
+  width: 2px;
+  background: var(--card-border);
+  z-index: 1;
+}
+
+.stepRow:last-child .stepLine {
+  display: none;
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.stepTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--secondary);
+  transition: var(--transition-normal);
+}
+
+.stepDesc {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* Active Step Styling */
+.stepActive .stepIconContainer {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #000000;
+  box-shadow: 0 0 15px 0 var(--primary-glow);
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+.stepActive .stepTitle {
+  color: var(--foreground);
+}
+
+.stepActive .stepDesc {
+  color: var(--secondary);
+}
+
+/* Completed Step Styling */
+.stepCompleted .stepIconContainer {
+  background: var(--success);
+  border-color: var(--success);
+  color: #000000;
+}
+
+.stepCompleted .stepTitle {
+  color: var(--foreground);
+}
+
+.stepCompleted .stepLine {
+  background: var(--success);
+}
+
+/* Cancelled State card */
+.cancelledCard {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.cancelledTitle {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--danger);
+}
+
+/* Order Details Details Card */
+.detailsCard {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+
+.detailsTitle {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 800;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 12px;
+}
+
+.detailsRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+}
+
+.detailsLabel {
+  color: var(--secondary);
+}
+
+.detailsValue {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.itemName {
+  color: var(--foreground);
+}
+
+.itemQtyPrice {
+  color: var(--secondary);
+}
+
+.divider {
+  height: 1px;
+  background: var(--card-border);
+  width: 100%;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.totalValue {
+  color: var(--accent);
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1); box-shadow: 0 0 5px 0 var(--primary-glow); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px 4px var(--primary-glow); }
+  100% { transform: scale(1); box-shadow: 0 0 5px 0 var(--primary-glow); }
+}

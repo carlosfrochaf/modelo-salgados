@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  icon      String?   // Emoji or lucide icon name
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id            String      @id @default(uuid())
+  name          String
+  description   String?
+  price         Float
+  imageUrl      String?
+  stockQuantity Int         @default(0)
+  active        Boolean     @default(true)
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  customerName    String
+  customerPhone   String      // Telefone / WhatsApp do cliente
+  deliveryType    String      // "ENTREGA" ou "RETIRADA"
+  deliveryAddress String?     // Endereço completo se for entrega
+  deliveryFee     Float       @default(0)
+  status          String      // "NOVO", "PREPARO", "PRONTO", "ENTREGUE", "CANCELADO"
+  total           Float
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+  observations    String?     // Observações ou sabores do pedido
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  orderId         String
+  productId       String
+  quantity        Int
+  unitPrice       Float
+  selectedFlavors String? // Sabores selecionados para o item (ex: "Coxinha, Kibe")
+
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
