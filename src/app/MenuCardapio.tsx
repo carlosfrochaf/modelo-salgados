@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { 
@@ -71,6 +71,126 @@ function getMaxFlavorsForProduct(name: string): number {
 function isFlavorProduct(name: string): boolean {
   return getMaxFlavorsForProduct(name) > 0;
 }
+
+interface ProductCardProps {
+  product: Product;
+  qtyInCart: number;
+  isFlavorProduct: boolean;
+  onAdd: (product: Product) => void;
+  onAddToCart: (product: Product, flavors: string[]) => void;
+  onUpdateQuantity: (cartItemId: string, amount: number) => void;
+  cartItemId: string | undefined;
+  formatCurrency: (value: number) => string;
+  selectedCategoryId: string;
+}
+
+const ProductCard = React.memo(({
+  product,
+  qtyInCart,
+  isFlavorProduct,
+  onAdd,
+  onAddToCart,
+  onUpdateQuantity,
+  cartItemId,
+  formatCurrency,
+  selectedCategoryId
+}: ProductCardProps) => {
+  const isOutOfStock = product.stockQuantity <= 0;
+  const isLowStock = product.stockQuantity <= 5 && product.stockQuantity > 0;
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardImageContainer}>
+        {product.imageUrl ? (
+          <Image 
+            src={product.imageUrl} 
+            alt={product.name} 
+            className={styles.cardImage}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            style={{ objectFit: 'cover' }}
+            priority={selectedCategoryId !== 'all' && product.categoryId === selectedCategoryId}
+          />
+        ) : (
+          <div style={{ height: '100%', background: '#1f1f23', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            🍔
+          </div>
+        )}
+
+        {isOutOfStock && (
+          <div className={styles.outOfStockBadge}>ESGOTADO</div>
+        )}
+        
+        {!isOutOfStock && isLowStock && (
+          <div className={styles.stockBadge}>
+            Apenas {product.stockQuantity} restam!
+          </div>
+        )}
+      </div>
+
+      <div className={styles.cardBody}>
+        <h3 className={styles.cardTitle}>{product.name}</h3>
+        {product.description && (
+          <p className={styles.cardDescription}>{product.description}</p>
+        )}
+      </div>
+
+      <div className={styles.cardFooter}>
+        <span className={styles.price}>{formatCurrency(product.price)}</span>
+        
+        {isOutOfStock ? (
+          <button className={styles.addButton} disabled>
+            Indisponível
+          </button>
+        ) : isFlavorProduct ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {qtyInCart > 0 && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 700, background: 'rgba(249, 115, 22, 0.15)', padding: '4px 8px', borderRadius: '4px' }}>
+                {qtyInCart} no carrinho
+              </span>
+            )}
+            <button 
+              className={styles.addButton}
+              onClick={() => onAdd(product)}
+            >
+              <Plus size={16} /> {qtyInCart > 0 ? 'Adicionar mais' : 'Adicionar'}
+            </button>
+          </div>
+        ) : qtyInCart > 0 ? (
+          <div className={styles.cardQtyControl}>
+            <button 
+              className={styles.cardQtyBtn}
+              onClick={() => {
+                if (cartItemId) onUpdateQuantity(cartItemId, -1);
+              }}
+              aria-label="Diminuir quantidade"
+            >
+              <Minus size={16} />
+            </button>
+            <span className={styles.cardQtyValue}>{qtyInCart}</span>
+            <button 
+              className={styles.cardQtyBtn}
+              onClick={() => {
+                if (cartItemId) onUpdateQuantity(cartItemId, 1);
+              }}
+              aria-label="Aumentar quantidade"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+        ) : (
+          <button 
+            className={styles.addButton}
+            onClick={() => onAddToCart(product, [])}
+          >
+            <Plus size={16} /> Adicionar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
+ProductCard.displayName = 'ProductCard';
 
 export default function MenuCardapio({ 
   initialCategories, 
@@ -364,9 +484,9 @@ export default function MenuCardapio({
   }, [cart, mounted]);
 
   // Format currency
-  const formatCurrency = (value: number) => {
+  const formatCurrency = useCallback((value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
+  }, []);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -378,21 +498,8 @@ export default function MenuCardapio({
     });
   }, [products, selectedCategoryId, searchQuery]);
 
-  // Intercept add button for flavor products
-  const handleAddButtonClick = (product: Product) => {
-    const maxFlavors = getMaxFlavorsForProduct(product.name);
-    if (maxFlavors > 0) {
-      setFlavorProduct(product);
-      setFlavorLimit(maxFlavors);
-      setCheckedFlavors([]);
-      setIsFlavorModalOpen(true);
-    } else {
-      addToCart(product, []);
-    }
-  };
-
   // Cart operations
-  const addToCart = (product: Product, flavors: string[]) => {
+  const addToCart = useCallback((product: Product, flavors: string[]) => {
     const cartItemId = `${product.id}-${[...flavors].sort().join(',')}`;
 
     setCart((prevCart) => {
@@ -415,9 +522,22 @@ export default function MenuCardapio({
 
       return [...prevCart, { id: cartItemId, product, quantity: 1, selectedFlavors: flavors }];
     });
-  };
+  }, []);
 
-  const updateQuantity = (cartItemId: string, amount: number) => {
+  // Intercept add button for flavor products
+  const handleAddButtonClick = useCallback((product: Product) => {
+    const maxFlavors = getMaxFlavorsForProduct(product.name);
+    if (maxFlavors > 0) {
+      setFlavorProduct(product);
+      setFlavorLimit(maxFlavors);
+      setCheckedFlavors([]);
+      setIsFlavorModalOpen(true);
+    } else {
+      addToCart(product, []);
+    }
+  }, [addToCart]);
+
+  const updateQuantity = useCallback((cartItemId: string, amount: number) => {
     setCart((prevCart) => {
       return prevCart.map((item) => {
         if (item.id === cartItemId) {
@@ -439,11 +559,11 @@ export default function MenuCardapio({
         return item;
       }).filter((item): item is CartItem => item !== null);
     });
-  };
+  }, []);
 
-  const removeFromCart = (cartItemId: string) => {
+  const removeFromCart = useCallback((cartItemId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== cartItemId));
-  };
+  }, []);
 
   const totalItems = useMemo(() => {
     return cart.reduce((total, item) => total + item.quantity, 0);
@@ -454,11 +574,11 @@ export default function MenuCardapio({
   }, [cart]);
 
   // Get total quantity of a product in the cart (aggregated)
-  const getProductQuantityInCart = (productId: string) => {
+  const getProductQuantityInCart = useCallback((productId: string) => {
     return cart
       .filter((i) => i.product.id === productId)
       .reduce((sum, i) => sum + i.quantity, 0);
-  };
+  }, [cart]);
 
   // Submit Order
   // Submit Order
@@ -777,99 +897,20 @@ ${finalObservations ? `\n📝 *Observações:* ${finalObservations}\n` : ''}
         <div className={styles.grid}>
           {filteredProducts.map((product) => {
             const qtyInCart = getProductQuantityInCart(product.id);
-            const isOutOfStock = product.stockQuantity <= 0;
-            const isLowStock = product.stockQuantity <= 5 && product.stockQuantity > 0;
-
+            const cartItem = cart.find((i) => i.product.id === product.id);
             return (
-              <div key={product.id} className={styles.card}>
-                <div className={styles.cardImageContainer}>
-                  {product.imageUrl ? (
-                    <Image 
-                      src={product.imageUrl} 
-                      alt={product.name} 
-                      className={styles.cardImage}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      style={{ objectFit: 'cover' }}
-                      priority={selectedCategoryId !== 'all' && product.categoryId === selectedCategoryId}
-                    />
-                  ) : (
-                    <div style={{ height: '100%', background: '#1f1f23', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      🍔
-                    </div>
-                  )}
-
-                  {isOutOfStock && (
-                    <div className={styles.outOfStockBadge}>ESGOTADO</div>
-                  )}
-                  
-                  {!isOutOfStock && isLowStock && (
-                    <div className={styles.stockBadge}>
-                      Apenas {product.stockQuantity} restam!
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.cardBody}>
-                  <h3 className={styles.cardTitle}>{product.name}</h3>
-                  <p className={styles.cardDescription}>{product.description}</p>
-                </div>
-
-                <div className={styles.cardFooter}>
-                  <span className={styles.price}>{formatCurrency(product.price)}</span>
-                  
-                  {isOutOfStock ? (
-                    <button className={styles.addButton} disabled>
-                      Indisponível
-                    </button>
-                  ) : isFlavorProduct(product.name) ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {qtyInCart > 0 && (
-                        <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 700, background: 'rgba(249, 115, 22, 0.15)', padding: '4px 8px', borderRadius: '4px' }}>
-                          {qtyInCart} no carrinho
-                        </span>
-                      )}
-                      <button 
-                        className={styles.addButton}
-                        onClick={() => handleAddButtonClick(product)}
-                      >
-                        <Plus size={16} /> {qtyInCart > 0 ? 'Adicionar mais' : 'Adicionar'}
-                      </button>
-                    </div>
-                  ) : qtyInCart > 0 ? (
-                    <div className={styles.cardQtyControl}>
-                      <button 
-                        className={styles.cardQtyBtn}
-                        onClick={() => {
-                          const item = cart.find((i) => i.product.id === product.id);
-                          if (item) updateQuantity(item.id, -1);
-                        }}
-                        aria-label="Diminuir quantidade"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className={styles.cardQtyValue}>{qtyInCart}</span>
-                      <button 
-                        className={styles.cardQtyBtn}
-                        onClick={() => {
-                          const item = cart.find((i) => i.product.id === product.id);
-                          if (item) updateQuantity(item.id, 1);
-                        }}
-                        aria-label="Aumentar quantidade"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button 
-                      className={styles.addButton}
-                      onClick={() => addToCart(product, [])}
-                    >
-                      <Plus size={16} /> Adicionar
-                    </button>
-                  )}
-                </div>
-              </div>
+              <ProductCard 
+                key={product.id}
+                product={product}
+                qtyInCart={qtyInCart}
+                isFlavorProduct={isFlavorProduct(product.name)}
+                onAdd={handleAddButtonClick}
+                onAddToCart={addToCart}
+                onUpdateQuantity={updateQuantity}
+                cartItemId={cartItem?.id}
+                formatCurrency={formatCurrency}
+                selectedCategoryId={selectedCategoryId}
+              />
             );
           })}
         </div>
